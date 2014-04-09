@@ -1,0 +1,90 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="left"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context=".MainActivity" >
+
+    <Button
+        android:id="@+id/camera_button"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:text="@string/camera" />
+
+    <Button
+        android:id="@+id/choose_button"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/camera_button"
+        android:layout_centerHorizontal="true"
+        android:text="@string/choose" />
+
+    <ImageView
+        android:id="@+id/processed_picture"
+        android:layout_width="180dip"
+        android:layout_height="180dip"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:scaleType="centerInside" />
+
+    <ImageView
+        android:id="@+id/original_picture"
+        android:layout_width="180dip"
+        android:layout_height="180dip"
+        android:layout_above="@+id/processed_picture"
+        android:layout_alignParentRight="true"
+        android:scaleType="centerInside" />
+
+            <TextView
+                android:id="@+id/Multiple"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignLeft="@+id/Close"
+                android:layout_below="@+id/Close"
+                android:layout_marginTop="56dp"
+                android:text="@string/multiple_object" />
+
+            <TextView
+                android:id="@+id/Illumination"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignTop="@+id/original_picture"
+                android:text="@string/illumination_result" />
+
+            <TextView
+                android:id="@+id/Blurdetect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignLeft="@+id/Illumination"
+                android:layout_below="@+id/Illumination"
+                android:layout_marginTop="50dp"
+                android:text="@string/blurdetection" />
+
+            <TextView
+                android:id="@+id/FTBlur"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBottom="@+id/original_picture"
+                android:layout_alignLeft="@+id/Blurdetect"
+                android:layout_marginBottom="24dp"
+                android:text="@string/ftblur" />
+
+            <TextView
+                android:id="@+id/Close"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignLeft="@+id/FTBlur"
+                android:layout_alignTop="@+id/processed_picture"
+                android:layout_marginTop="22dp"
+                android:text="@string/close_detection" />
+
+</RelativeLayout>

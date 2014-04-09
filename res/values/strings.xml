@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">ImageProcess</string>
+
+    <string name="camera">Camera</string>
+
+    <string name="choose">Albumn</string>
+
+    <string name="multiple_object">Multiple Object</string>
+
+    <string name="illumination_result">Illumination</string>
+
+    <string name="blurdetection">BlurDetection</string>
+
+    <string name="ftblur">FTBlur</string>
+
+    <string name="close_detection">Boundary</string>
+
+</resources>
