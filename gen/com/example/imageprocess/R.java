@@ -50,21 +50,24 @@ containing a value of this type.
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
-        public static final int Blurdetect=0x7f04000a;
-        public static final int Close=0x7f040008;
-        public static final int FTBlur=0x7f04000b;
-        public static final int Illumination=0x7f040009;
-        public static final int Multiple=0x7f040007;
+        public static final int Blurdetect=0x7f040009;
+        public static final int Close=0x7f040007;
+        public static final int FTBlur=0x7f04000a;
+        public static final int Illumination=0x7f040008;
+        public static final int Multiple=0x7f040006;
+        public static final int action_search=0x7f04000c;
         public static final int any=0x7f040000;
         public static final int back=0x7f040001;
-        public static final int camera_button=0x7f040003;
-        public static final int choose_button=0x7f040004;
+        public static final int camera=0x7f04000b;
+        public static final int camera_preview=0x7f040003;
         public static final int front=0x7f040002;
-        public static final int original_picture=0x7f040006;
-        public static final int processed_picture=0x7f040005;
+        public static final int original_picture=0x7f040005;
+        public static final int processed_picture=0x7f040004;
     }
     public static final class layout {
-        public static final int activity_main=0x7f030000;
+        public static final int activity_cam=0x7f030000;
+        public static final int activity_main=0x7f030001;
+        public static final int cam_menu=0x7f030002;
     }
     public static final class string {
         public static final int app_name=0x7f060000;
