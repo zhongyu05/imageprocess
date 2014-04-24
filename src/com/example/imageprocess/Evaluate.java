@@ -3,7 +3,13 @@ package com.example.imageprocess;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.opencv.core.*;
 import org.opencv.core.Core.MinMaxLocResult;
@@ -12,6 +18,7 @@ import org.opencv.imgproc.*;
 import org.opencv.utils.Converters;
 
 import android.util.Log;
+
 
 /*
 import java.awt.*;
@@ -92,8 +99,41 @@ public class Evaluate {
 			
 
 			//Blur Detection Part
+			Mat blr = new Mat();
+			blr = I.clone();
+
+			double[] threadblur = new double [2];
+			BlurRun blrr = new BlurRun(blr,threadblur);
+			Thread para = new Thread(blrr);
+			para.start();
+			
+			System.out.println("Blur Detection Stat");
+			System.out.println("FT Blur Detection Stat");
 			feature.blur = ftblur(I);
-			feature.blurextent = blurdetect(I);
+			
+			System.out.println("Wavelet Blur Detection Stat");
+			//feature.blurextent = blurdetect(I);
+			
+//			I.copyTo(blr);
+			
+			/*
+			ExecutorService pool = Executors.newFixedThreadPool(3);
+		    Set<Future<Double>> set = new HashSet<Future<Double>>();
+		      Callable<Double> callable = new Blur(blr);
+		      Future<Double> future = pool.submit(callable);
+		      set.add(future);
+		    
+			
+		      double threadblur = future.get();
+		      */
+
+			
+//		      feature.blurextent = threadblur;
+//		    System.out.println("Blur from thread is "+ threadblur);
+			
+			
+//			feature.blurextent = 0.1;
+
             
 //            Illumination Check
 			feature.illu = illucheck(I);
@@ -119,7 +159,7 @@ public class Evaluate {
 			
 		//Find the Convex Hul of the Mask
             System.out.println("Convex Hull Part");
-			 Mat boundary = new Mat(I.rows(),I.cols(),CvType.CV_32FC1,Scalar.all(0));
+			Mat boundary = new Mat(I.rows(),I.cols(),CvType.CV_32FC1,Scalar.all(0));
 			Convex(Salient,boundary);
 //			Salient = boundary.clone();
             boundary.copyTo(Salient);
@@ -127,8 +167,11 @@ public class Evaluate {
 			imfill(Salient);
 			Core.multiply(Salient, I, I_whole);
             System.out.println("Save feature Convex Hull");
-			feature.Salient = Salient.clone();
-			feature.I_whole = I_whole.clone();
+            
+			feature.Salient = new Mat();
+			Salient.copyTo(feature.Salient);
+			feature.I_whole = new Mat();
+			I_whole.copyTo(feature.I_whole);
 		//Test if the object in the Image is too close to the boundary
             System.out.println("Close to Border Detection");
 			feature.closeflag = Close(Salient);
@@ -144,11 +187,17 @@ public class Evaluate {
 			//feature.result = I.colRange(100, 200);
 		//	salient(sal.Saliencymap);
 			System.out.println("Saliency Detect over");
-			feature.result = I_whole.clone();
+			feature.result = new Mat();
+			I_whole.copyTo(feature.result);
 			sal.Saliencymap.copyTo(feature.SaliencyMap);
 			//feature.SaliencyMap = sal.Saliencymap;
 			
 			
+			para.join();
+			feature.blurextent = threadblur[0];
+			System.out.println("Feature has blur "+ threadblur[0]);
+//			feature.blurextent = threadblur.doubleValue();
+//			System.out.println("Feature has blur "+ threadblur.doubleValue());
 		}
 		 catch(Exception e)
          {
@@ -433,7 +482,8 @@ public class Evaluate {
 //        Reshape the Map into 1D
 		ab = saliencyMap.reshape (0,oWidth*oHeight);
 		ab.convertTo(ab, CvType.CV_32FC1);
-        
+		System.out.println("Reshape finished");
+
 		// K means starts here divide the map into 3 parts based on the descending order of scores
 		
 		  Mat labels = new Mat();
@@ -569,8 +619,10 @@ public class Evaluate {
 		Mat F = new Mat();
 		Mat magnitude = new Mat();
 		Mat H = new Mat(imgInput.rows(), imgInput.cols(), CvType.CV_32FC1,Scalar.all(1));
-		int w = imgInput.width();
-		int h = imgInput.height();
+//		int w = imgInput.width();
+//		int h = imgInput.height();
+		int r = imgInput.rows();
+		int c = imgInput.cols();
 		
 		boolean blur;
 		// merge
@@ -592,6 +644,7 @@ public class Evaluate {
 		Core.multiply(magnitude, Scalar.all(255.0/max), magnitude);
 		
 		double sumvalue = 0;
+		/*
 		for (int i = 0;i<h;i++)
 		{
 			for (int j = 0;j<w;j++)
@@ -599,15 +652,33 @@ public class Evaluate {
 				sumvalue += magnitude.get(i,j)[0];
 			}
 		}
+	*/
+		sumvalue = Core.sumElems(magnitude).val[0];
+		Core.divide(magnitude, Scalar.all(sumvalue), magnitude);
+		System.out.println("Normalize Magnitude Map");
 	
 		
-		Core.divide(magnitude, Scalar.all(sumvalue), magnitude);
 //      Create a Mask just segmenting the high frequency part from the FT, where high frequency defined as the 25% border
+		sumvalue = 0.0;
+		Mat q0 = magnitude.submat(0, (int) Math.round(0.25*r), 0, c);
+		sumvalue+= Core.sumElems(q0).val[0];
+		
+		Mat q1 = magnitude.submat((int) Math.round(0.75*r), r, 0, c);
+		sumvalue+= Core.sumElems(q1).val[0];
+		
+		Mat q2 = magnitude.submat((int) Math.round(0.25*r), (int) Math.round(0.75*r), 0, (int) Math.round(0.75*c));
+		sumvalue+= Core.sumElems(q2).val[0];
+		
+		Mat q3 = magnitude.submat((int) Math.round(0.25*r), (int) Math.round(0.75*r), (int) Math.round(0.75*c), c);
+		sumvalue+= Core.sumElems(q3).val[0];
+
+		/*
 		for (int i = 0;i<Math.round(0.25*h);i++)
 		{
 			for (int j = 0;j<w;j++)
 			{
-				H.put(i, j, 0);
+			//	H.put(i, j, 0);
+				sumvalue += magnitude.get(i,j)[0];
 			}
 		}
 	
@@ -616,7 +687,8 @@ public class Evaluate {
 		{
 			for (int j = 0;j<w;j++)
 			{
-				H.put(i, j, 0);
+			//	H.put(i, j, 0);
+				sumvalue += magnitude.get(i,j)[0];
 			}
 		}
 		
@@ -624,7 +696,8 @@ public class Evaluate {
 		{
 			for (int i = 0;i<h;i++)
 			{
-				H.put(i, j, 0);
+				//H.put(i, j, 0);
+				sumvalue += magnitude.get(i,j)[0];
 			}
 		}
 		
@@ -632,11 +705,12 @@ public class Evaluate {
 		{
 			for (int i = 0;i<h;i++)
 			{
-				H.put(i, j, 0);
+			//	H.put(i, j, 0);
+				sumvalue += magnitude.get(i,j)[0];
 			}
 		}
-		
-		
+		*/
+		/*
 //		Shift the Magnitude Map ensure the origin is at the cneter
 		myfftshift(magnitude);
 //      Calculate the high part sum of normalized Magnitude Map
@@ -649,6 +723,8 @@ public class Evaluate {
 				sumvalue += magnitude.get(i,j)[0];
 			}
 		}
+		*/
+		System.out.println("Get High Frequency Part Sum");
 		if (sumvalue < 0.17)
 		{
 			blur = true;
@@ -706,6 +782,7 @@ public class Evaluate {
 		double[][] dwt = Haar(I0);
 //        Convert the result back into Mat
 		DoubleToMat(dwt,I);
+		System.out.println("Haar DWT finished");
 		//I  = I.t();
 		//dwt = MatToDouble(I);
 		r = dwt.length;
@@ -740,7 +817,8 @@ public class Evaluate {
 	    		
 	    	}		     
 	    }
-	    System.out.println("AA got");
+	    
+	    System.out.println("EMAP got");
 	    Mat AA = new Mat(A.length,A[0].length,CvType.CV_32FC1,Scalar.all(0));
 		DoubleToMat(A,AA);
 
@@ -1164,34 +1242,61 @@ public class Evaluate {
 		int c = input[0].length;
 		    
 		double[ ][ ] dwt = new double[ r ][ c ];
-		    
-		    for( int i = 0; i <r; i++ ) {
+	    double[ ] arrTime = new double[ c ];
+//	    double[] arrHilb;
+	    
+
 		      
-		      double[ ] arrTime = new double[ c ];
+		for( int j = 0; j < c; j++ )
+		    arrTime[ j ] = input[ 0 ][ j ];
+
+	    
+		 for( int i = 1; i <r; i++ ) {
+			 
+			 double[] arrHilb = L3haar( arrTime );
+			 if (i == 1) System.out.println("One L3 takes seconds" + r +" rows");
+			 
+		     for( int j = 0; j < c; j++ ){
+		    	  dwt[ i-1 ][ j ] = arrHilb[ j ];
+		    	  arrTime[ j ] = input[ i ][ j ];
+		      }
+		      //arrTime = new double[ c ];
 		      
-		      for( int j = 0; j < c; j++ )
-		        arrTime[ j ] = input[ i ][ j ];
-		      
-		      double[ ] arrHilb = L3haar( arrTime );
-		      
-		      for( int j = 0; j < c; j++ )
-		        dwt[ i ][ j ] = arrHilb[ j ];
-		      
+		     
+
 		    } // rows
+		 
+		 double[] arrHilb = L3haar( arrTime );
+	      for( int j = 0; j < c; j++ )
+		        dwt[ r-1 ][ j ] = arrHilb[ j ];
 		    
-		    for( int j = 0; j < c; j++ ) {
+	      System.out.println("Haar DWT Row transform finished");
+	      
+	      //Colums
+	      double[] arrTimec = new double [r];
+	      for( int i = 0; i < r; i++ )
+		        arrTimec[ i ] = dwt[ i ][ 0 ];
+	      
+		    for( int j = 1; j < c; j++ ) {
+		    	
+		    	double[] arrHilbc = L3haar( arrTimec );
+
+			     for( int i = 0; i < r; i++ ){
+			        dwt[ i ][ j-1 ] = arrHilbc[ i ];
+			        arrTimec[ i ] = dwt[ i ][ j ];
+
+			     }
+//		      arrTime = new double[ r ];
+
 		      
-		      double[ ] arrTime = new double[ r ];
-		      
-		      for( int i = 0; i < r; i++ )
-		        arrTime[ i ] = dwt[ i ][ j ];
-		      
-		      double[ ] arrHilb = L3haar( arrTime );
-		      
-		      for( int i = 0; i < r; i++ )
-		        dwt[ i ][ j ] = arrHilb[ i ];
+//		      double[ ] arrHilb = L3haar( arrTime );
 		      
 		    } // cols
+		    
+		    double[] arrHilbc = L3haar( arrTimec );
+
+		      for( int i = 0; i < r; i++ )
+		        dwt[ i ][ c-1 ] = arrHilbc[ i ];
 		    
 	return dwt;	
 	}
@@ -1307,4 +1412,814 @@ public class Evaluate {
 }
 class Saliency {
 	static Mat Saliencymap = new Mat();
+}
+
+/*
+class Blur implements Callable {
+	public Mat imgInput;
+
+	Blur(Mat image){
+		//Mat iamge = new Mat();
+		this. imgInput = new Mat();
+		image.copyTo(this.imgInput);
+		
+	}
+	
+	
+	public static void main(Mat I) throws Exception {
+		ExecutorService pool = Executors.newFixedThreadPool(3);
+	    Set<Future<Double>> set = new HashSet<Future<Double>>();
+	      Callable<Double> callable = new Blur(I);
+	      Future<Double> future = pool.submit(callable);
+	      set.add(future);
+	    
+	      double threadblur = future.get();
+	  }
+	
+	
+	public Double call() {
+//     Row And Column
+		int r = Math.round(imgInput.rows()/8)*8;
+		int c = Math.round(imgInput.cols()/8)*8;
+		double blurextent = 0.0;
+		Mat I = new Mat(c,r,CvType.CV_32FC1,Scalar.all(0));
+		Imgproc.resize(imgInput, I, new Size(c, r), 0, 0, Imgproc.INTER_CUBIC);
+     
+//   Convert Mat into Double 2D Array
+		double[][] I0 = MatToDouble(I);
+//   Wavelet Transform
+		double[][] dwt = Haar(I0);
+//     Convert the result back into Mat
+		DoubleToMat(dwt,I);
+		System.out.println("Haar DWT finished");
+		//I  = I.t();
+		//dwt = MatToDouble(I);
+		r = dwt.length;
+		c = dwt[0].length;
+			
+//   Blur Detection Part
+		double[][] HL2 = new double[r/4][c/4];
+		double[][] LH2 = new double[r/4][c/4];
+		double[][] HH2 = new double[r/4][c/4];
+		double[][] EMAP2 = new double[r/4][c/4];
+		
+		double[][] HL3 = new double[r/2][c/2];
+		double[][] LH3 = new double[r/2][c/2];
+		double[][] HH3 = new double[r/2][c/2];
+		double[][] EMAP3 = new double[r/2][c/2];
+
+		double[][] A = new double[r/8][c/8];
+		double[][] HL1 = new double[r/8][c/8];
+		double[][] LH1 = new double[r/8][c/8];
+		double[][] HH1 = new double[r/8][c/8];
+		double[][] EMAP1 = new double[r/8][c/8];
+	    for (int i = 0 ; i < r/8; i++) {
+	    	for(int j = 0;j<c/8; j++){
+	    		A[i][j] = dwt[i][j];
+	    		HL1[i][j] = dwt[i][j+c/8];
+	    		LH1[i][j] = dwt[i+r/8][j];
+	    		HH1[i][j] = dwt[i+r/8][j+c/8];
+	    		double temppt = HL1[i][j]*HL1[i][j];
+	    		temppt += LH1[i][j]*LH1[i][j];
+	    		temppt += HH1[i][j]*HH1[i][j];
+	    		EMAP1[i][j] = Math.sqrt(temppt);
+	    		
+	    	}		     
+	    }
+	    
+	    System.out.println("EMAP got");
+	    Mat AA = new Mat(A.length,A[0].length,CvType.CV_32FC1,Scalar.all(0));
+		DoubleToMat(A,AA);
+
+	    for (int i = 0 ; i < r/4; i++) {
+	    	for(int j = 0;j < c/4; j++){
+	    		
+	    		HL2[i][j] = dwt[i][j+c/4];
+	    		LH2[i][j] = dwt[i+r/4][j];
+	    		HH2[i][j] = dwt[i+r/4][j+c/4];
+	    		
+	    		double temppt = HL2[i][j]*HL2[i][j];
+	    		temppt += LH2[i][j]*LH2[i][j];
+	    		temppt += HH2[i][j]*HH2[i][j];
+	    		EMAP2[i][j] = Math.sqrt(temppt);
+	    	}		     
+	    }
+
+	    for (int i = 0 ; i < r/2; i++) {
+	    	for(int j = 0;j < c/2; j++){
+	    		
+	    		HL3[i][j] = dwt[i][j+c/2];
+	    		LH3[i][j] = dwt[i+r/2][j];
+	    		HH3[i][j] = dwt[i+r/2][j+c/2];
+	    		
+	    		double temppt = HL3[i][j]*HL3[i][j];
+	    		temppt += LH3[i][j]*LH3[i][j];
+	    		temppt += HH3[i][j]*HH3[i][j];
+	    		EMAP3[i][j] = Math.sqrt(temppt);
+	    	}		     
+	    }
+	    
+	    double[][] Emax1 = ordmax(EMAP1,2);
+	    double[][] Emax2 = ordmax(EMAP2,4);
+	    double[][] Emax3 = ordmax(EMAP3,8);
+	        
+	    int Nedge = 0;
+		int T = 35;
+		Mat Edgemap = new Mat(Emax1.length,Emax1[0].length,CvType.CV_32FC1,Scalar.all(1));
+		for (int i = 0;i<Emax1.length;i++){
+			for (int j = 0;j<Emax1[0].length;j++)
+			{
+				if ( (Emax1[i][j]>T)||(Emax2[i][j]>T)||(Emax3[i][j]>T)){
+					Nedge++;
+				}else
+				{
+					Edgemap.put(i, j, 0);
+				}
+			}
+		}
+		
+		int Nda = 0;
+		int Nrg = 0;
+		int Nbrg = 0;
+		
+		for (int k = 0;k<Emax1.length;k++){
+			for (int l = 0;l<Emax1[0].length;l++)
+			{
+				if ( Edgemap.get(k, l)[0]>0){
+					// Rule 2
+					if ((Emax1[k][l]<Emax2[k][l])&&(Emax2[k][l]<Emax3[k][l])){
+						Nda++;
+					}
+					//Rule 3
+					if ((Emax1[k][l]>Emax2[k][l])&&(Emax2[k][l]>Emax3[k][l]))
+			        {
+						Nrg++;
+						//Rule 5
+						if (Emax3[k][l]<T)
+						{
+							Nbrg++;
+						}
+			        }
+
+					//Rule 4
+					if ((Emax1[k][l]<Emax2[k][l])&&(Emax2[k][l]>Emax3[k][l]))
+					{ 
+						Nrg=Nrg+1;
+					//Rule 5
+						if (Emax3[k][l]<T)
+						{
+							Nbrg++;
+						}
+			        }
+					}
+				}
+			}
+		
+		imgInput = imgInput.t();
+
+		Mat Emapcheck = new Mat(EMAP1.length,EMAP1[0].length,CvType.CV_32FC1,Scalar.all(0));
+		DoubleToMat(EMAP1,Emapcheck);
+		Emapcheck = Emapcheck.t();
+		
+		System.out.println(Nda);
+		System.out.println(Nedge);
+		System.out.println(Nrg);
+		System.out.println(Nbrg);
+		
+		blurextent = (double)Nbrg/Nrg;
+		System.out.println("Blur Extent is "+blurextent);
+		return Double.valueOf(blurextent);
+	}
+	
+//	3 level Haar Wavelet Transform
+	 public static double[] L3haar( double[] values )
+	  {
+	    double[] dwt = new double[values.length];
+
+	    double[] L3 = new double[ values.length/2 ];
+	    double[] C3 = new double[ values.length/2 ];
+	    
+	 
+	    double[] L2 = new double[ values.length/4 ];
+	    double[] C2 = new double[ values.length/4 ];
+	    	    
+	    double[] L1 = new double[ values.length/8 ];
+	    double[] C1 = new double[ values.length/8 ];
+
+	    for (int i = 0, j = 0; i < values.length; i += 2, j++) {
+	    	 L3[j] = (values[i] + values[i+1])*0.7071;
+		      C3[j] = (values[i] - values[i+1])*0.7071;
+	      //L3[j] = (values[i] + values[i+1])/2;
+	      //C3[j] = (values[i] - values[i+1])/2;
+	    }
+	   
+	   
+	    for (int i = 0, j = 0; i < L3.length; i += 2, j++) {
+	    	 L2[j] = (L3[i] + L3[i+1])*0.7071;
+		      C2[j] = (L3[i] - L3[i+1])*0.7071;
+		    //  L2[j] = (L3[i] + L3[i+1])/2;
+		      //C2[j] = (L3[i] - L3[i+1])/2;
+		    }
+	    
+	   
+	    
+	    for (int i = 0, j = 0; i < L2.length; i += 2, j++) {
+	    	  L1[j] = (L2[i] + L2[i+1])*0.7071;
+		      C1[j] = (L2[i] - L2[i+1])*0.7071;
+		   //   L1[j] = (L2[i] + L2[i+1])/2;
+		     // C1[j] = (L2[i] - L2[i+1])/2;
+		    }
+	  
+	    for (int i = 0 ; i < L1.length; i ++) {
+		     
+		    	 dwt[i] = L1[i];
+		    	 dwt[i+L1.length] = C1[i];
+	    }
+	    
+	    for (int i = 0 ; i < L2.length; i ++) {
+		     
+	    	 dwt[i+2*L1.length] = C2[i];
+	    }
+	    
+	    for (int i = 0 ; i < L3.length; i ++) {
+
+	    	 dwt[i+2*L1.length+L2.length] = C3[i];
+	    }
+		
+
+	    return dwt;
+	  } // haar_calc
+
+	 
+	public static double[][] Haar(double[][] input){
+		
+		int r = input.length;
+		int c = input[0].length;
+		    
+		double[ ][ ] dwt = new double[ r ][ c ];
+	    double[ ] arrTime = new double[ c ];
+//	    double[] arrHilb;
+	    
+
+		      
+		for( int j = 0; j < c; j++ )
+		    arrTime[ j ] = input[ 0 ][ j ];
+
+	    
+		 for( int i = 1; i <r; i++ ) {
+			 
+			 double[] arrHilb = L3haar( arrTime );
+			 if (i == 1) System.out.println("One L3 takes seconds" + r +" rows");
+			 
+		     for( int j = 0; j < c; j++ ){
+		    	  dwt[ i-1 ][ j ] = arrHilb[ j ];
+		    	  arrTime[ j ] = input[ i ][ j ];
+		      }
+		      //arrTime = new double[ c ];
+		      
+		     
+
+		    } // rows
+		 
+		 double[] arrHilb = L3haar( arrTime );
+	      for( int j = 0; j < c; j++ )
+		        dwt[ r-1 ][ j ] = arrHilb[ j ];
+		    
+	      System.out.println("Haar DWT Row transform finished");
+	      
+	      //Colums
+	      double[] arrTimec = new double [r];
+	      for( int i = 0; i < r; i++ )
+		        arrTimec[ i ] = dwt[ i ][ 0 ];
+	      
+		    for( int j = 1; j < c; j++ ) {
+		    	
+		    	double[] arrHilbc = L3haar( arrTimec );
+
+			     for( int i = 0; i < r; i++ ){
+			        dwt[ i ][ j-1 ] = arrHilbc[ i ];
+			        arrTimec[ i ] = dwt[ i ][ j ];
+
+			     }
+//		      arrTime = new double[ r ];
+
+		      
+//		      double[ ] arrHilb = L3haar( arrTime );
+		      
+		    } // cols
+		    
+		    double[] arrHilbc = L3haar( arrTimec );
+
+		      for( int i = 0; i < r; i++ )
+		        dwt[ i ][ c-1 ] = arrHilbc[ i ];
+		    
+	return dwt;	
+	}
+	
+//   Find the maximum value in a certain mask, non-linear filter for Image Processing
+	public static double[][] ordmax( double[][] vals,int ordsize )
+	  {
+		int r = vals.length;
+		int c = vals[0].length;
+	    double[][] pad = new double[r+ordsize-1][c+ordsize-1];
+	    double[][] temp = new double[r+ordsize-1][c+ordsize-1];
+	    double[][] max = new double[r][c];
+		double[][] maxroi = new double[Math.round((r+ordsize-1)/ordsize)][Math.round((c+ordsize-1)/ordsize)];
+	    
+	    for (int i = 0;i<r;i++){
+	    	for (int j = 0;j<c;j++){
+	    		pad[i][j] = vals[i][j];
+	    		temp[i][j] = vals[i][j];
+	    	}
+	    }
+	    //System.out.println(r);
+	
+	    for (int i = 0;i<r;i++){
+	    	for (int j = 0;j<ordsize-1;j++){
+	    		pad[i][j+c] = vals[i][c-j-1];
+	    		temp[i][j+c] = vals[i][c-j-1];
+	    	}
+	    }
+	    
+	    for (int i = 0;i<ordsize-1;i++){
+	    	for (int j = 0;j<c+ordsize-1;j++){
+	    		pad[i+r][j] = pad[r-i-1][j];
+	    		temp[i+r][j] = temp[r-i-1][j];
+	    	}
+	    }
+	    
+	    for (int i = 0;i<r;i++){
+	    	for (int j = 0;j<c;j++){
+	    		double tempmax = pad[i][j];
+	    		for (int k = 0;k <ordsize;k++)
+	    		{
+	    			for (int l = 0;l<ordsize;l++)
+	    			{
+	    				tempmax = Math.max(tempmax, pad[i+k][j+l]);
+	    			}
+	    		}
+	    		max[i][j] = tempmax;
+	    	}
+	    }
+	   
+	    for (int i = 0;i<maxroi.length;i++){
+	    	for (int j = 0;j<maxroi[0].length;j++){
+	    		maxroi[i][j] = max[ordsize*i][ordsize*j];
+	    	}
+	    }
+	    
+	    for (int i = 0;i<maxroi.length;i++){
+	    	for (int j = 0;j<maxroi[0].length;j++){
+	    		System.out.println(maxroi[i][j]);
+	    	}
+	    }
+	    
+		return maxroi;
+	  } // wavelet_test
+	
+//   Convert the Mat into a double Array
+	public static double[][] MatToDouble(Mat I){
+		int r = I.rows();
+		int c = I.cols();
+		double[][] d = new double[r][c];
+		
+		for (int i = 0;i<r; i++)
+		{
+			for (int j = 0;j<c; j++)
+			{
+				d[i][j] = I.get(i, j)[0];
+			}
+		}
+		
+		return d;
+		
+	}
+	
+//   Convert a 2D double Array back into Mat
+	public static void DoubleToMat(double[][] d, Mat I){
+		int r = d.length;
+		int c = d[0].length;
+		//Mat I = new Mat();
+		
+		for (int i = 0;i<r; i++)
+		{
+			for (int j = 0;j<c; j++)
+			{
+				I.put(i, j, d[i][j]);
+			}
+		}
+		
+	//	return I;
+		
+	}
+	
+}
+*/
+
+class BlurRun implements Runnable {
+	Mat imgInput;
+//	Double extent;
+	double[] extent;
+	
+	BlurRun(Mat image,double[] extent){
+		//Mat iamge = new Mat();
+		this. imgInput = new Mat();
+//		image.copyTo(this.imgInput);
+		imgInput = image.clone();
+		this.extent = extent;
+	}
+	
+	/*
+	public static void main(Mat I) throws Exception {
+		ExecutorService pool = Executors.newFixedThreadPool(3);
+	    Set<Future<Double>> set = new HashSet<Future<Double>>();
+	      Callable<Double> callable = new Blur(I);
+	      Future<Double> future = pool.submit(callable);
+	      set.add(future);
+	    
+	      double threadblur = future.get();
+	  }
+	*/
+	
+	public void run() {
+//     Row And Column
+		int r = Math.round(imgInput.rows()/8)*8;
+		int c = Math.round(imgInput.cols()/8)*8;
+		double blurextent = 0.0;
+		Mat I = new Mat(c,r,CvType.CV_32FC1,Scalar.all(0));
+		Imgproc.resize(imgInput, I, new Size(c, r), 0, 0, Imgproc.INTER_CUBIC);
+     
+//   Convert Mat into Double 2D Array
+		double[][] I0 = MatToDouble(I);
+//   Wavelet Transform
+		double[][] dwt = Haar(I0);
+//     Convert the result back into Mat
+		DoubleToMat(dwt,I);
+		System.out.println("Haar DWT finished");
+		//I  = I.t();
+		//dwt = MatToDouble(I);
+		r = dwt.length;
+		c = dwt[0].length;
+			
+//   Blur Detection Part
+		double[][] HL2 = new double[r/4][c/4];
+		double[][] LH2 = new double[r/4][c/4];
+		double[][] HH2 = new double[r/4][c/4];
+		double[][] EMAP2 = new double[r/4][c/4];
+		
+		double[][] HL3 = new double[r/2][c/2];
+		double[][] LH3 = new double[r/2][c/2];
+		double[][] HH3 = new double[r/2][c/2];
+		double[][] EMAP3 = new double[r/2][c/2];
+
+		double[][] A = new double[r/8][c/8];
+		double[][] HL1 = new double[r/8][c/8];
+		double[][] LH1 = new double[r/8][c/8];
+		double[][] HH1 = new double[r/8][c/8];
+		double[][] EMAP1 = new double[r/8][c/8];
+	    for (int i = 0 ; i < r/8; i++) {
+	    	for(int j = 0;j<c/8; j++){
+	    		A[i][j] = dwt[i][j];
+	    		HL1[i][j] = dwt[i][j+c/8];
+	    		LH1[i][j] = dwt[i+r/8][j];
+	    		HH1[i][j] = dwt[i+r/8][j+c/8];
+	    		double temppt = HL1[i][j]*HL1[i][j];
+	    		temppt += LH1[i][j]*LH1[i][j];
+	    		temppt += HH1[i][j]*HH1[i][j];
+	    		EMAP1[i][j] = Math.sqrt(temppt);
+	    		
+	    	}		     
+	    }
+	    
+	    System.out.println("EMAP got");
+	    Mat AA = new Mat(A.length,A[0].length,CvType.CV_32FC1,Scalar.all(0));
+		DoubleToMat(A,AA);
+
+	    for (int i = 0 ; i < r/4; i++) {
+	    	for(int j = 0;j < c/4; j++){
+	    		
+	    		HL2[i][j] = dwt[i][j+c/4];
+	    		LH2[i][j] = dwt[i+r/4][j];
+	    		HH2[i][j] = dwt[i+r/4][j+c/4];
+	    		
+	    		double temppt = HL2[i][j]*HL2[i][j];
+	    		temppt += LH2[i][j]*LH2[i][j];
+	    		temppt += HH2[i][j]*HH2[i][j];
+	    		EMAP2[i][j] = Math.sqrt(temppt);
+	    	}		     
+	    }
+
+	    for (int i = 0 ; i < r/2; i++) {
+	    	for(int j = 0;j < c/2; j++){
+	    		
+	    		HL3[i][j] = dwt[i][j+c/2];
+	    		LH3[i][j] = dwt[i+r/2][j];
+	    		HH3[i][j] = dwt[i+r/2][j+c/2];
+	    		
+	    		double temppt = HL3[i][j]*HL3[i][j];
+	    		temppt += LH3[i][j]*LH3[i][j];
+	    		temppt += HH3[i][j]*HH3[i][j];
+	    		EMAP3[i][j] = Math.sqrt(temppt);
+	    	}		     
+	    }
+	    
+	    double[][] Emax1 = ordmax(EMAP1,2);
+	    double[][] Emax2 = ordmax(EMAP2,4);
+	    double[][] Emax3 = ordmax(EMAP3,8);
+	        
+	    int Nedge = 0;
+		int T = 35;
+		Mat Edgemap = new Mat(Emax1.length,Emax1[0].length,CvType.CV_32FC1,Scalar.all(1));
+		for (int i = 0;i<Emax1.length;i++){
+			for (int j = 0;j<Emax1[0].length;j++)
+			{
+				if ( (Emax1[i][j]>T)||(Emax2[i][j]>T)||(Emax3[i][j]>T)){
+					Nedge++;
+				}else
+				{
+					Edgemap.put(i, j, 0);
+				}
+			}
+		}
+		
+		int Nda = 0;
+		int Nrg = 0;
+		int Nbrg = 0;
+		
+		for (int k = 0;k<Emax1.length;k++){
+			for (int l = 0;l<Emax1[0].length;l++)
+			{
+				if ( Edgemap.get(k, l)[0]>0){
+					// Rule 2
+					if ((Emax1[k][l]<Emax2[k][l])&&(Emax2[k][l]<Emax3[k][l])){
+						Nda++;
+					}
+					//Rule 3
+					if ((Emax1[k][l]>Emax2[k][l])&&(Emax2[k][l]>Emax3[k][l]))
+			        {
+						Nrg++;
+						//Rule 5
+						if (Emax3[k][l]<T)
+						{
+							Nbrg++;
+						}
+			        }
+
+					//Rule 4
+					if ((Emax1[k][l]<Emax2[k][l])&&(Emax2[k][l]>Emax3[k][l]))
+					{ 
+						Nrg=Nrg+1;
+					//Rule 5
+						if (Emax3[k][l]<T)
+						{
+							Nbrg++;
+						}
+			        }
+					}
+				}
+			}
+		
+		imgInput = imgInput.t();
+
+		Mat Emapcheck = new Mat(EMAP1.length,EMAP1[0].length,CvType.CV_32FC1,Scalar.all(0));
+		DoubleToMat(EMAP1,Emapcheck);
+		Emapcheck = Emapcheck.t();
+		/*
+		System.out.println(Nda);
+		System.out.println(Nedge);
+		System.out.println(Nrg);
+		System.out.println(Nbrg);
+		*/
+		blurextent = (double)Nbrg/Nrg;
+//		extent = (Double) blurextent;
+//		extent.valueOf(blurextent);
+		extent[0] = blurextent;
+		System.out.println("Blur Extent is "+ extent[0]);
+
+//		System.out.println("Blur Extent is "+ extent.doubleValue());
+
+	}
+	
+//	3 level Haar Wavelet Transform
+	 public static double[] L3haar( double[] values )
+	  {
+	    double[] dwt = new double[values.length];
+
+	    double[] L3 = new double[ values.length/2 ];
+	    double[] C3 = new double[ values.length/2 ];
+	    
+	 
+	    double[] L2 = new double[ values.length/4 ];
+	    double[] C2 = new double[ values.length/4 ];
+	    	    
+	    double[] L1 = new double[ values.length/8 ];
+	    double[] C1 = new double[ values.length/8 ];
+
+	    for (int i = 0, j = 0; i < values.length; i += 2, j++) {
+	    	 L3[j] = (values[i] + values[i+1])*0.7071;
+		      C3[j] = (values[i] - values[i+1])*0.7071;
+	      //L3[j] = (values[i] + values[i+1])/2;
+	      //C3[j] = (values[i] - values[i+1])/2;
+	    }
+	   
+	   
+	    for (int i = 0, j = 0; i < L3.length; i += 2, j++) {
+	    	 L2[j] = (L3[i] + L3[i+1])*0.7071;
+		      C2[j] = (L3[i] - L3[i+1])*0.7071;
+		    //  L2[j] = (L3[i] + L3[i+1])/2;
+		      //C2[j] = (L3[i] - L3[i+1])/2;
+		    }
+	    
+	   
+	    
+	    for (int i = 0, j = 0; i < L2.length; i += 2, j++) {
+	    	  L1[j] = (L2[i] + L2[i+1])*0.7071;
+		      C1[j] = (L2[i] - L2[i+1])*0.7071;
+		   //   L1[j] = (L2[i] + L2[i+1])/2;
+		     // C1[j] = (L2[i] - L2[i+1])/2;
+		    }
+	  
+	    for (int i = 0 ; i < L1.length; i ++) {
+		     
+		    	 dwt[i] = L1[i];
+		    	 dwt[i+L1.length] = C1[i];
+	    }
+	    
+	    for (int i = 0 ; i < L2.length; i ++) {
+		     
+	    	 dwt[i+2*L1.length] = C2[i];
+	    }
+	    
+	    for (int i = 0 ; i < L3.length; i ++) {
+
+	    	 dwt[i+2*L1.length+L2.length] = C3[i];
+	    }
+		
+
+	    return dwt;
+	  } // haar_calc
+
+	 
+	public static double[][] Haar(double[][] input){
+		
+		int r = input.length;
+		int c = input[0].length;
+		    
+		double[ ][ ] dwt = new double[ r ][ c ];
+	    double[ ] arrTime = new double[ c ];
+//	    double[] arrHilb;
+	    
+
+		      
+		for( int j = 0; j < c; j++ )
+		    arrTime[ j ] = input[ 0 ][ j ];
+
+	    
+		 for( int i = 1; i <r; i++ ) {
+			 
+			 double[] arrHilb = L3haar( arrTime );
+			 if (i == 1) System.out.println("One L3 takes seconds" + r +" rows");
+			 
+		     for( int j = 0; j < c; j++ ){
+		    	  dwt[ i-1 ][ j ] = arrHilb[ j ];
+		    	  arrTime[ j ] = input[ i ][ j ];
+		      }
+		      //arrTime = new double[ c ];
+		      
+		     
+
+		    } // rows
+		 
+		 double[] arrHilb = L3haar( arrTime );
+	      for( int j = 0; j < c; j++ )
+		        dwt[ r-1 ][ j ] = arrHilb[ j ];
+		    
+	      System.out.println("Haar DWT Row transform finished");
+	      
+	      //Colums
+	      double[] arrTimec = new double [r];
+	      for( int i = 0; i < r; i++ )
+		        arrTimec[ i ] = dwt[ i ][ 0 ];
+	      
+		    for( int j = 1; j < c; j++ ) {
+		    	
+		    	double[] arrHilbc = L3haar( arrTimec );
+
+			     for( int i = 0; i < r; i++ ){
+			        dwt[ i ][ j-1 ] = arrHilbc[ i ];
+			        arrTimec[ i ] = dwt[ i ][ j ];
+
+			     }
+//		      arrTime = new double[ r ];
+
+		      
+//		      double[ ] arrHilb = L3haar( arrTime );
+		      
+		    } // cols
+		    
+		    double[] arrHilbc = L3haar( arrTimec );
+
+		      for( int i = 0; i < r; i++ )
+		        dwt[ i ][ c-1 ] = arrHilbc[ i ];
+		    
+	return dwt;	
+	}
+	
+//   Find the maximum value in a certain mask, non-linear filter for Image Processing
+	public static double[][] ordmax( double[][] vals,int ordsize )
+	  {
+		int r = vals.length;
+		int c = vals[0].length;
+	    double[][] pad = new double[r+ordsize-1][c+ordsize-1];
+	    double[][] temp = new double[r+ordsize-1][c+ordsize-1];
+	    double[][] max = new double[r][c];
+		double[][] maxroi = new double[Math.round((r+ordsize-1)/ordsize)][Math.round((c+ordsize-1)/ordsize)];
+	    
+	    for (int i = 0;i<r;i++){
+	    	for (int j = 0;j<c;j++){
+	    		pad[i][j] = vals[i][j];
+	    		temp[i][j] = vals[i][j];
+	    	}
+	    }
+	    //System.out.println(r);
+	
+	    for (int i = 0;i<r;i++){
+	    	for (int j = 0;j<ordsize-1;j++){
+	    		pad[i][j+c] = vals[i][c-j-1];
+	    		temp[i][j+c] = vals[i][c-j-1];
+	    	}
+	    }
+	    
+	    for (int i = 0;i<ordsize-1;i++){
+	    	for (int j = 0;j<c+ordsize-1;j++){
+	    		pad[i+r][j] = pad[r-i-1][j];
+	    		temp[i+r][j] = temp[r-i-1][j];
+	    	}
+	    }
+	    
+	    for (int i = 0;i<r;i++){
+	    	for (int j = 0;j<c;j++){
+	    		double tempmax = pad[i][j];
+	    		for (int k = 0;k <ordsize;k++)
+	    		{
+	    			for (int l = 0;l<ordsize;l++)
+	    			{
+	    				tempmax = Math.max(tempmax, pad[i+k][j+l]);
+	    			}
+	    		}
+	    		max[i][j] = tempmax;
+	    	}
+	    }
+	   
+	    for (int i = 0;i<maxroi.length;i++){
+	    	for (int j = 0;j<maxroi[0].length;j++){
+	    		maxroi[i][j] = max[ordsize*i][ordsize*j];
+	    	}
+	    }
+	/*    
+	    for (int i = 0;i<maxroi.length;i++){
+	    	for (int j = 0;j<maxroi[0].length;j++){
+	    		System.out.println(maxroi[i][j]);
+	    	}
+	    }
+	 */   
+		return maxroi;
+	  } // wavelet_test
+	
+//   Convert the Mat into a double Array
+	public static double[][] MatToDouble(Mat I){
+		int r = I.rows();
+		int c = I.cols();
+		double[][] d = new double[r][c];
+		
+		for (int i = 0;i<r; i++)
+		{
+			for (int j = 0;j<c; j++)
+			{
+				d[i][j] = I.get(i, j)[0];
+			}
+		}
+		
+		return d;
+		
+	}
+	
+//   Convert a 2D double Array back into Mat
+	public static void DoubleToMat(double[][] d, Mat I){
+		int r = d.length;
+		int c = d[0].length;
+		//Mat I = new Mat();
+		
+		for (int i = 0;i<r; i++)
+		{
+			for (int j = 0;j<c; j++)
+			{
+				I.put(i, j, d[i][j]);
+			}
+		}
+		
+	//	return I;
+		
+	}
+	
 }
