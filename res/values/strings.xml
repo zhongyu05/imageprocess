@@ -9,11 +9,7 @@
 
     <string name="multiple_object">Multiple Object</string>
 
-    <string name="illumination_result">Illumination</string>
-
-    <string name="blurdetection">BlurDetection</string>
-
-    <string name="ftblur">FTBlur</string>
+    <string name="Feedback_result">Illumination</string>
 
     <string name="close_detection">Boundary</string>
     
