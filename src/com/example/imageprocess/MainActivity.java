@@ -206,68 +206,59 @@ public class MainActivity extends Activity {
 			//Utils.matToBitmap(feature.SaliencyMap, result);
 			
 			//Feedback for illumination
-			tv = (TextView) findViewById(R.id.Illumination);
+			tv = (TextView) findViewById(R.id.Feedback);
+			String feedback = "";
 			if (feature.illu[0]){
-			tv.setText("Too Low Illu");
+				feedback = feedback + "Too Low Illuminated";
 			}else if(feature.illu[1]){
-				tv.setText("Too High Illu");
+				feedback = feedback + "Too High Illuminated";
 			}else{
-				tv.setText("Good Illu");
+				feedback = feedback + "Good Illu";
 			}
 				
 			//Feedback for blur
-			tv = (TextView) findViewById(R.id.FTBlur);
-			if (feature.blur){
-			tv.setText("Blurry Image");
-			}else {
-				tv.setText("Clear Image");
+			if (feature.blur || feature.blurextent >= 0.85){
+				feedback = feedback + " and blurry";
 			}
 			
 			//Feedback for blurextent
-			tv = (TextView) findViewById(R.id.Blurdetect);
-			if (feature.blurextent >=0.85){
-			tv.setText("Highly Blurry");
-			} else if (feature.blurextent > 0.5){
-				tv.setText("Probable Blurry");
-			}else{
-				tv.setText("Clearly");
+			if (feature.blurextent > 0.5 || !feature.blur){
+				feedback = feedback + " and probably blurry.\n";
 			}
+			
 			//Feedback for close detection
-			String close = "";
 			int c = 0;
+			String closefeedback = "";
 			if (feature.closeflag[0]){
-				close = close +"Top";
+				closefeedback = closefeedback + "Objects too close to top; ";
 				c++;
 			}
 			if (feature.closeflag[1]){
-				close = close +" Bott";
+				closefeedback = closefeedback + "Objects too close to bottom; ";
 				c++;
 			}
 			if (feature.closeflag[2]){
-				close = close +" Left";
+				closefeedback = closefeedback + "Objects too close to left; ";
 				c++;
 			}
 			if (feature.closeflag[3]){
-				close = close +" Right";
+				closefeedback = closefeedback + "Objects too close to right; ";
 				c++;
 			}
 			if (c>=3){
-				close = "Too Close";
+				closefeedback = "Too Close to Object";
 			}
 			
-			if (c ==0){
-			 close = "Nice";
-			}
-			tv = (TextView) findViewById(R.id.Close);
-			tv.setText(close);
-			
+			feedback = feedback + closefeedback;
+			feedback = feedback + '\n';
 			//Feedback for multiple object
-			tv = (TextView) findViewById(R.id.Multiple);
 			if (feature.multiple){
-			tv.setText("Multiple Obj");
-			}else {
-				tv.setText("Single Obj");
+				feedback = feedback + "Multiple Objects existing, please remove irrelevant objects";
 			}
+			
+			tv.setText(feedback);
+			
+
 			
 			processedImageView.setImageBitmap(result);
 		}
@@ -357,69 +348,58 @@ public class MainActivity extends Activity {
 		    		//feature.SaliencyMap.convertTo(feature.SaliencyMap, CvType.CV_8UC1);
 		    		//Utils.matToBitmap(feature.SaliencyMap, result);
 		    		
-		    		//Feedback for illumination
-		    		tv = (TextView) findViewById(R.id.Illumination);
-		    		if (feature.illu[0]){
-		    		tv.setText("Too Low Illu");
-		    		}else if(feature.illu[1]){
-		    			tv.setText("Too High Illu");
-		    		}else{
-		    			tv.setText("Good Illu");
-		    		}
-		    			
-		    		//Feedback for blur
-		    		tv = (TextView) findViewById(R.id.FTBlur);
-		    		if (feature.blur){
-		    		tv.setText("Blurry Image");
-		    		}else {
-		    			tv.setText("Clear Image");
-		    		}
-		    		
-		    		//Feedback for blurextent
-		    		tv = (TextView) findViewById(R.id.Blurdetect);
-		    		if (feature.blurextent >=0.85){
-		    		tv.setText("Highly Blurry");
-		    		} else if (feature.blurextent > 0.5){
-		    			tv.setText("Probable Blurry");
-		    		}else{
-		    			tv.setText("Clearly");
-		    		}
-		    		//Feedback for close detection
-		    		String close = "";
-		    		int c = 0;
-		    		if (feature.closeflag[0]){
-		    			close = close +"Top";
-		    			c++;
-		    		}
-		    		if (feature.closeflag[1]){
-		    			close = close +" Bott";
-		    			c++;
-		    		}
-		    		if (feature.closeflag[2]){
-		    			close = close +" Left";
-		    			c++;
-		    		}
-		    		if (feature.closeflag[3]){
-		    			close = close +" Right";
-		    			c++;
-		    		}
-		    		if (c>=3){
-		    			close = "Too Close";
-		    		}
-		    		
-		    		if (c ==0){
-		    		 close = "Nice";
-		    		}
-		    		tv = (TextView) findViewById(R.id.Close);
-		    		tv.setText(close);
-		    		
-		    		//Feedback for multiple object
-		    		tv = (TextView) findViewById(R.id.Multiple);
-		    		if (feature.multiple){
-		    		tv.setText("Multiple Obj");
-		    		}else {
-		    			tv.setText("Single Obj");
-		    		}
+		          //Feedback for illumination
+					tv = (TextView) findViewById(R.id.Feedback);
+					String feedback = "";
+					if (feature.illu[0]){
+						feedback = feedback + "Too Low Illuminated";
+					}else if(feature.illu[1]){
+						feedback = feedback + "Too High Illuminated";
+					}else{
+						feedback = feedback + "Good Illu";
+					}
+						
+					//Feedback for blur
+					if (feature.blur || feature.blurextent >= 0.85){
+						feedback = feedback + " and blurry";
+					}
+					
+					//Feedback for blurextent
+					if (feature.blurextent > 0.5 || !feature.blur){
+						feedback = feedback + " and probably blurry.\n";
+					}
+					
+					//Feedback for close detection
+					int c = 0;
+					String closefeedback = "";
+					if (feature.closeflag[0]){
+						closefeedback = closefeedback + "Objects too close to top; ";
+						c++;
+					}
+					if (feature.closeflag[1]){
+						closefeedback = closefeedback + "Objects too close to bottom; ";
+						c++;
+					}
+					if (feature.closeflag[2]){
+						closefeedback = closefeedback + "Objects too close to left; ";
+						c++;
+					}
+					if (feature.closeflag[3]){
+						closefeedback = closefeedback + "Objects too close to right; ";
+						c++;
+					}
+					if (c>=3){
+						closefeedback = "Too Close to Object";
+					}
+					
+					feedback = feedback + closefeedback;
+					feedback = feedback + '\n';
+					//Feedback for multiple object
+					if (feature.multiple){
+						feedback = feedback + "Multiple Objects existing, please remove irrelevant objects";
+					}
+					
+					tv.setText(feedback);
 		    		
 		    		processedImageView.setImageBitmap(result);
 		    	}
