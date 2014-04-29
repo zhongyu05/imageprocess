@@ -7,6 +7,7 @@ import java.text.DecimalFormat;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.app.Activity;
 import android.util.Log;
 import android.view.View;
@@ -42,6 +43,7 @@ public class MainActivity extends Activity {
 	private Mat grayMatOri = null;
 	private Mat originalgrayMatOri = null;
 	private String passedImgPathString = null;
+
 	
 	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -132,6 +134,12 @@ public class MainActivity extends Activity {
 		if (bitmap != null && !bitmap.isRecycled()) {
 			bitmap.recycle();
 		}
+		
+		File path = Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES);
+        path.mkdirs();
+	    File mediaStorageDir = new File(path, "imgprocess");
+	    File tmpSkinFile = new File(mediaStorageDir.getPath() + File.separator + "skintmp.jpg");
 		
 		BitmapFactory.Options options = new BitmapFactory.Options();
 		options.inPreferredConfig = Bitmap.Config.ARGB_8888;

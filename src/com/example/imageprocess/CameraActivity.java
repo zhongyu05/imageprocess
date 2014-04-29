@@ -126,11 +126,11 @@ public class CameraActivity extends Activity{
 	}
 	
 	/** Create a File for saving an image or video */
-	private static File getOutputMediaFile(int type){
+	public static File getOutputMediaFile(int type){
 	    // To be safe, you should check that the SDCard is mounted
 	    // using Environment.getExternalStorageState() before doing this.
 		String storageStatusString = Environment.getExternalStorageState();
-        Log.d("VizWizStatus", storageStatusString);
+        Log.d("ImageProcessStatus", storageStatusString);
 
         File path = Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES);
@@ -142,7 +142,7 @@ public class CameraActivity extends Activity{
 	    // Create the storage directory if it does not exist
 	    if (! mediaStorageDir.exists()){
 	        if (! mediaStorageDir.mkdirs()){
-	            Log.d("vizwiz", "failed to create directory");
+	            Log.d("ImageProcess", "failed to create directory");
 	            return null;
 	        }
 	    }
