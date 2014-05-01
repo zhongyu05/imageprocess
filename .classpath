@@ -5,8 +5,5 @@
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
-	<classpathentry kind="lib" path="marvin/framework/marvin_1.5.0.jar"/>
-	<classpathentry kind="lib" path="marvin/plugins/image/org.marvinproject.image.color.skinColorDetection.jar"/>
-	<classpathentry kind="lib" path="marvin/lib/junit-4.7.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

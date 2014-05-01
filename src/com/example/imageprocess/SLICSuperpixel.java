@@ -9,12 +9,12 @@ import org.opencv.imgproc.*;
 import org.opencv.utils.Converters;
 
 public class SLICSuperpixel {
-	protected ArrayList<ArrayList<Integer>> clusters;
-	protected ArrayList<ArrayList<Double>> distances;
-	protected ArrayList<ColorRep> centers;
-	protected ArrayList<Integer> centerCounts;
+	protected ArrayList<ArrayList<Integer>> clusters = new ArrayList<ArrayList<Integer>>();
+	protected ArrayList<ArrayList<Double>> distances = new ArrayList<ArrayList<Double>>();
+	protected ArrayList<ColorRep> centers = new ArrayList<SLICSuperpixel.ColorRep>();
+	protected ArrayList<Integer> centerCounts = new ArrayList<Integer>();
     
-	protected Mat image;
+	protected Mat image = new Mat();
 	protected int K;
 	protected int S;
 	protected int m;
@@ -30,8 +30,10 @@ public class SLICSuperpixel {
 	    centers.clear();
 	    centerCounts.clear();
 	    
-	    if( !image.empty() )
+	    if( image != null && !image.empty() ){
 	        image.release();
+	        image = new Mat();
+	    }
 	}
 	
 	public void generateSuperPixels(){
@@ -268,13 +270,13 @@ public class SLICSuperpixel {
 	    double min_gradient = Double.MAX_VALUE;
 	    for( int y = (int)(center.y - 1); y < center.y + 2; y++ ) {
 	        for( int x = (int)(center.x - 1); x < center.x + 2; x++ ) {
-	        	double[] lab = new double[3];
+	        	byte[] lab = new byte[3];
 	        	image.get(y, x, lab);
 	        	
-	        	double[] lab_dy = new double[3];
+	        	byte[] lab_dy = new byte[3];
 	        	image.get(y+1, x, lab_dy);
 	        	
-	        	double[] lab_dx = new double[3];
+	        	byte[] lab_dx = new byte[3];
 	        	image.get(y, x+1, lab_dx);
 //	            Vec3b lab    = image.at<Vec3b>( y  , x   );
 //	            Vec3b lab_dy = image.at<Vec3b>( y+1, x   );
@@ -301,7 +303,7 @@ public class SLICSuperpixel {
 	    this.m = m;
 	    this.maxIterations = max_iterations;
 	    
-		Imgproc.cvtColor(src, image, Imgproc.COLOR_BGR2Lab);
+		Imgproc.cvtColor(src, image, Imgproc.COLOR_RGB2Lab);
 
 //	    Imgproc.cvtColor( src, image, Imgproc.CV_BGR2Lab );
 	    

@@ -4,11 +4,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -16,19 +18,28 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.Button;
 import android.content.ContentResolver;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.DialogInterface.OnDismissListener;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 public class MainActivity extends Activity {
 	private static final String TAG = "ImageProcess::Activity";
@@ -43,7 +54,11 @@ public class MainActivity extends Activity {
 	private Mat grayMatOri = null;
 	private Mat originalgrayMatOri = null;
 	private String passedImgPathString = null;
+	
 
+	
+	//private MarvinImage image;
+	//private MarvinImagePlugin     imagePlugin;
 	
 	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -127,6 +142,8 @@ public class MainActivity extends Activity {
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);  
     }
 	
+
+	
 	
 	private void processImage() throws FileNotFoundException{
     	originalImageView.setImageBitmap(null);
@@ -134,12 +151,17 @@ public class MainActivity extends Activity {
 		if (bitmap != null && !bitmap.isRecycled()) {
 			bitmap.recycle();
 		}
-		
+		/*
+		image = MarvinImageIO.loadImage(passedImgPathString);
+		imagePlugin = MarvinPluginLoader.loadImagePlugin("org.marvinproject.image.color.skinColorDetection.jar");
+		imagePlugin.process(image, image);
 		File path = Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES);
         path.mkdirs();
 	    File mediaStorageDir = new File(path, "imgprocess");
 	    File tmpSkinFile = new File(mediaStorageDir.getPath() + File.separator + "skintmp.jpg");
+
+		MarvinImageIO.saveImage(image, tmpSkinFile.getAbsolutePath());*/
 		
 		BitmapFactory.Options options = new BitmapFactory.Options();
 		options.inPreferredConfig = Bitmap.Config.ARGB_8888;
@@ -156,6 +178,30 @@ public class MainActivity extends Activity {
 		originalgrayMatOri = new Mat();
 		grayMatOri = new Mat();
 		Utils.bitmapToMat(bitmap, rgbMatOri);
+		
+		//Try Super pixel
+		
+		/*
+		 SLICSuperpixel slic = new SLICSuperpixel( rgbMatOri, 400 );
+		    slic.generateSuperPixels();
+//			    imshow( "CIELab space", slic.getImage() );
+		   
+		    // Recolor based on the average cluster color 
+		    Mat Aresult = slic.recolor();
+		    Imgproc.cvtColor( Aresult, Aresult, Imgproc.COLOR_Lab2RGB );
+//			    imshow( "Clustered color", result );
+		   
+		    // Draw the contours bordering the clusters 
+		    ArrayList<Point> contours = slic.getContours();
+		    Mat superpixel = new Mat();
+		    superpixel = rgbMatOri.clone();
+		    for( Point contour: contours ){
+		    double[] colorvalue = {255.0,0.0,255.0};
+		    superpixel.put((int)contour.y, (int)contour.x, colorvalue);
+//			        image.at<Vec3b>( contour.y, contour.x ) = Vec3b(255, 0, 255);
+		    }
+		    */
+		
 //Convert the Original Color Image into Gray Image
 		Imgproc.cvtColor(rgbMatOri, originalgrayMatOri, Imgproc.COLOR_RGB2GRAY);
 		

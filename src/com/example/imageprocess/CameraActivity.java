@@ -10,7 +10,11 @@ import java.util.Locale;
 
 import android.animation.AnimatorSet.Builder;
 import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.DialogInterface.OnDismissListener;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.database.Cursor;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
@@ -24,9 +28,13 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import com.example.imageprocess.CameraPreview;
 import com.example.imageprocess.R;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 public class CameraActivity extends Activity{
 	private static final String TAG = "CameraActivity";
@@ -35,6 +43,10 @@ public class CameraActivity extends Activity{
 	
 	private Camera mCamera;
 	private CameraPreview mPreview;
+	
+    private AsyncHttpClient mHttpclient = new AsyncHttpClient();
+    private ProgressDialog sendingDialog = null;
+
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -163,6 +175,41 @@ public class CameraActivity extends Activity{
 	    return mediaFile;
 	}
 	
+	private void uploadPicture(){
+		RequestParams params = new RequestParams();
+		String storageStatusString = Environment.getExternalStorageState();
+        Log.d("ImageProcessStatus", storageStatusString);
+
+        File path = Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES);
+	    File mediaStorageDir = new File(path, "imgprocess");
+	    File[] files = mediaStorageDir.listFiles();
+	    for (int i = 0; i < files.length; i++) {
+	    	File file = files[i];
+			try {
+				params.put("pictures["+i+"]", file);
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		//File imgFile = new File(passedImgPathString);
+
+		mHttpclient.post(this, "http://cs.rochester.edu/u/zyu/blind/upload.php", params, new AsyncHttpResponseHandler() {
+		    @Override
+		    public void onSuccess(String response) {
+			    sendingDialog.dismiss();
+			    Toast.makeText(getApplicationContext(), "Uploading complete, you can quit the app now.", Toast.LENGTH_SHORT).show();
+		    }
+		    @Override
+		    public void onFailure(int statusCode, org.apache.http.Header[] headers, byte[] responseBody, java.lang.Throwable error){
+		    	 Log.v("Main", "fail"+statusCode+responseBody+","+error.toString());
+		    	 Toast.makeText(getApplicationContext(), "Sending failed", Toast.LENGTH_SHORT).show();
+		    	 sendingDialog.dismiss();
+		    }
+		});
+	}
+	
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 	    // Handle item selection
@@ -184,6 +231,21 @@ public class CameraActivity extends Activity{
 			    }
 			 }, 1000);
 	        return true;
+	    case R.id.action_upload:
+			sendingDialog = ProgressDialog.show(this, "Uploading, please wait",
+				    null, true);
+			sendingDialog.setOnDismissListener(new OnDismissListener() {
+				
+				@Override
+				public void onDismiss(DialogInterface dialog) {
+					// TODO Auto-generated method stub
+					mHttpclient.cancelRequests(getApplicationContext(), true);
+				}
+			});
+			
+			sendingDialog.show();
+			uploadPicture();
+	    	return true;
 	    default:
 	        return super.onOptionsItemSelected(item);
 	    }

@@ -13,4 +13,6 @@
 
     <string name="close_detection">Boundary</string>
     
+    <string name="upload">Upload</string>
+    
 </resources>
