@@ -311,7 +311,7 @@ public class SLICSuperpixel {
 	    for( int y = S; y < image.rows() - S / 2; y += S ) {
 	        for( int x = S; x < image.cols() - S / 2; x += S ) {
 	            Point minimum = findLocalMinimum( image,new Point(x, y));
-	            double[] color = new double[3];
+	            byte[] color = new byte[3];
 	            image.get((int)minimum.y, (int)minimum.x, color);
 //	            Vec3b color = image.at<Vec3b>( minimum.y, minimum.x );
 	            centers.add(new ColorRep( color, minimum ));
