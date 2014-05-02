@@ -41,6 +41,8 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
+import edu.rochester.blindphoto.SLICSuperpixel;
+
 public class MainActivity extends Activity {
 	private static final String TAG = "ImageProcess::Activity";
 	
@@ -181,13 +183,13 @@ public class MainActivity extends Activity {
 		
 		//Try Super pixel
 		
-		/*
+		
 		 SLICSuperpixel slic = new SLICSuperpixel( rgbMatOri, 400 );
 		    slic.generateSuperPixels();
 //			    imshow( "CIELab space", slic.getImage() );
 		   
 		    // Recolor based on the average cluster color 
-		    Mat Aresult = slic.recolor();
+		    /*Mat Aresult = slic.recolor();
 		    Imgproc.cvtColor( Aresult, Aresult, Imgproc.COLOR_Lab2RGB );
 //			    imshow( "Clustered color", result );
 		   
@@ -199,8 +201,8 @@ public class MainActivity extends Activity {
 		    double[] colorvalue = {255.0,0.0,255.0};
 		    superpixel.put((int)contour.y, (int)contour.x, colorvalue);
 //			        image.at<Vec3b>( contour.y, contour.x ) = Vec3b(255, 0, 255);
-		    }
-		    */
+		    }*/
+		    
 		
 //Convert the Original Color Image into Gray Image
 		Imgproc.cvtColor(rgbMatOri, originalgrayMatOri, Imgproc.COLOR_RGB2GRAY);
