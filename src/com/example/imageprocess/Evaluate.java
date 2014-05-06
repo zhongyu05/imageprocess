@@ -113,28 +113,101 @@ public class Evaluate {
 			
 			System.out.println("Wavelet Blur Detection Stat");
 			//feature.blurextent = blurdetect(I);
-			
-//			I.copyTo(blr);
-			
-			/*
-			ExecutorService pool = Executors.newFixedThreadPool(3);
-		    Set<Future<Double>> set = new HashSet<Future<Double>>();
-		      Callable<Double> callable = new Blur(blr);
-		      Future<Double> future = pool.submit(callable);
-		      set.add(future);
-		    
-			
-		      double threadblur = future.get();
-		      */
+						
 
+//Try Super pixel
 			
-//		      feature.blurextent = threadblur;
-//		    System.out.println("Blur from thread is "+ threadblur);
+			Mat copy_sp = new Mat();
+			copy_sp = copy.clone();
+			Imgproc.resize(copy_sp, copy_sp, new Size(),(double)128.0/copy.cols(),(double)128.0/copy.cols(),Imgproc.INTER_LINEAR);
 			
+			copy_sp.convertTo(copy_sp, CvType.CV_32FC3);
+			System.out.println("Superpixel Input has channel "+copy_sp.channels());
+//			
+//			
+			SLICSuperpixel slic = new SLICSuperpixel( copy_sp, 600 );
 			
-//			feature.blurextent = 0.1;
+			Mat superpixel = new Mat();
+			superpixel = copy_sp.clone();
+//			Imgproc.cvtColor(copy_sp, superpixel, Imgproc.COLOR_RGB2Lab);
+//			superpixel = slic.getImage();
+			
+			System.out.println("Superpixel Segmentation Generate Super Pixels");
+			slic.generateSuperPixels();
+//////				    imshow( "CIELab space", slic.getImage() );
+////			   
+//			    // Recolor based on the average cluster color 
+////			System.out.println("Superpixel Segmentation Recolor");
+////			Mat Aresult = new Mat();
+////			Aresult.convertTo(Aresult, CvType.CV_32FC3);
+////			Aresult = slic.recolor();
+//////			Imgproc.cvtColor( Aresult, Aresult, Imgproc.COLOR_Lab2RGB );
+////			Aresult.convertTo(Aresult, CvType.CV_8UC3);
+//////				    imshow( "Clustered color", result );
+//			System.out.println("Superpixel Segmentation Draw Contours");
+//			System.out.println("Image has "+copy_sp.channels()+" channels");
+			    // Draw the contours bordering the clusters
+			
+//			ArrayList<Point> contours = slic.getContours();
+//			System.out.println("Total "+contours.size()+ " contours");
 
-            
+//			superpixel = copy_sp.clone();
+//			superpixel.convertTo(superpixel, CvType.CV_32FC3);
+////			int contour_cnt = 0;
+//////			for( Point contour: contours ){
+//		    float[] colorvalue = new float[4];
+//		    
+//		    double[] contourvalue = new double[]{255.0,0.0,255.0};
+//		    
+//		    
+////			float[] colorvalue;
+//			for( int cnt = 0; cnt < contours.size();cnt++){
+////			   
+//			    int x = (int)contours.get(cnt).x;
+//			    int y = (int)contours.get(cnt).y;
+//////			    System.out.println("Contour "+ cnt +" drawn for "+x + " " + y);
+////
+//			    if (x >= 0 && x < superpixel.cols() && y >= 0 && y < superpixel.rows())
+//			    	{
+////			    		if (copy_sp.channels() == 3) 
+////			    	copy_sp.get(y, x, colorvalue);
+//			    	copy_sp.get(x, y, colorvalue);
+//
+//			    	colorvalue[0] = (float) 200.0;
+//				    colorvalue[1] = (float) 0.0;
+//				    colorvalue[2] = (float) 200.0;
+////			    			copy_sp.put(y, x, colorvalue);
+//			    			copy_sp.put(x,y,colorvalue);
+////			    		colorvaluet[x+y*copy.rows()] = (float)0.0;
+////			    		colorvaluet[x+y*copy.rows()+(int)copy.total()] = (float)0.0;
+////			    		colorvaluet[x+y*copy.rows()+2*(int)copy.total()] = (float)255.0;
+//
+//			    	}
+////			    	copy_sp.put(x, y, colorvalue);
+////				        image.at<Vec3b>( contour.y, contour.x ) = Vec3b(255, 0, 255);
+//			}
+////			copy_sp.put(0, 0, colorvaluet);
+////			Imgproc.cvtColor(superpixel, superpixel, Imgproc.COLOR_Lab2RGB);
+//			Imgproc.resize(copy_sp, copy_sp, new Size(copy.cols(),copy.rows()));
+//
+//			copy_sp.convertTo(copy_sp, CvType.CV_8UC3);
+////			copy.convertTo(copy, CvType.CV_8UC3);
+//			feature.superpixel = copy_sp.clone();
+			
+
+
+//			superpixel = slic.drawContours();
+//			Imgproc.cvtColor(superpixel, superpixel, Imgproc.COLOR_Lab2LRGB);
+			System.out.println("Draw contours for superpixel");
+			superpixel = slic.drawContours(copy_sp);
+			System.out.println("Save Super Pixel Result");
+
+			superpixel.convertTo(superpixel, CvType.CV_8UC3);
+			Imgproc.resize(superpixel, superpixel, new Size(copy.cols(),copy.rows()));
+			
+			feature.superpixel = superpixel.clone();
+			
+			
 //            Illumination Check
 			feature.illu = illucheck(I);
 			System.out.println("Low Illusion Flag is "+illu[0]);
@@ -149,29 +222,43 @@ public class Evaluate {
 			//Core.add(MostSalient, MediumSalient, Salient);
             System.out.println("Saliency Map Mask Start");
 
-//			Salient = MostSalient.clone();
-            MostSalient.copyTo(Salient);
+			Salient = MostSalient.clone();
+//            MostSalient.copyTo(Salient);
 			I.convertTo(I, CvType.CV_32FC1);
+			
+//			Combien the result of Superpixel and Saliency
+			System.out.println("Combine Superpixel and saliency");
+            slic.Combine(Salient);
+			Imgproc.resize(Salient, Salient, new Size(copy.cols(),copy.rows()));			
+			
 			//Fill the Mask to get the I_whole Image Better
             System.out.println("Start filling the Saliency Mask");
-
 			imfill(Salient);
 			
 		//Find the Convex Hul of the Mask
             System.out.println("Convex Hull Part");
 			Mat boundary = new Mat(I.rows(),I.cols(),CvType.CV_32FC1,Scalar.all(0));
+//			Mat boundary = new Mat(I.cols(),I.rows(),CvType.CV_32FC1,Scalar.all(0));
+
 			Convex(Salient,boundary);
-//			Salient = boundary.clone();
-            boundary.copyTo(Salient);
+			Salient = boundary.clone();
+//            boundary.copyTo(Salient);
             System.out.println("Filling Convex Hull");
 			imfill(Salient);
 			Core.multiply(Salient, I, I_whole);
             System.out.println("Save feature Convex Hull");
             
-			feature.Salient = new Mat();
-			Salient.copyTo(feature.Salient);
-			feature.I_whole = new Mat();
-			I_whole.copyTo(feature.I_whole);
+            Mat debug = Salient.clone();
+			Core.multiply(Salient, I, debug);
+			feature.result = debug.clone();
+			
+//			feature.Salient = new Mat();
+//			Salient.copyTo(feature.Salient);
+//			feature.I_whole = new Mat();
+//			I_whole.copyTo(feature.I_whole);
+            feature.Salient = Salient.clone();
+            feature.I_whole = I_whole.clone();
+            
 		//Test if the object in the Image is too close to the boundary
             System.out.println("Close to Border Detection");
 			feature.closeflag = Close(Salient);
@@ -187,8 +274,11 @@ public class Evaluate {
 			//feature.result = I.colRange(100, 200);
 		//	salient(sal.Saliencymap);
 			System.out.println("Saliency Detect over");
-			feature.result = new Mat();
-			I_whole.copyTo(feature.result);
+//			feature.result = new Mat();
+//			I_whole.copyTo(feature.result);
+			
+//			feature.result = I_whole.clone();
+			
 			sal.Saliencymap.copyTo(feature.SaliencyMap);
 			//feature.SaliencyMap = sal.Saliencymap;
 			
@@ -497,6 +587,7 @@ public class Evaluate {
 		System.out.println("Primitive Kmeans finished");
 
 		ab.convertTo(ab, CvType.CV_32FC1);
+//		2.0 for Most, 1.0 for Medium, 0 for Least as Initialization
 		Imgproc.threshold(ab, MostSalient, 1.0, 1.0, Imgproc.THRESH_BINARY);
 		Imgproc.threshold(ab, MediumSalient, 0, 1.0, Imgproc.THRESH_BINARY);
 		Core.subtract(MediumSalient, MostSalient, MediumSalient);
@@ -519,47 +610,59 @@ public class Evaluate {
 		check2count = Core.countNonZero(MediumSalient);
 		check3count = Core.countNonZero(LeastSalient);
 		
-		double check1value = 0;
-		for (int i = 0;i<oHeight;i++)
-		{
-			for (int j = 0;j<oWidth;j++)
-			{
-				if (check1.get(i,j)[0] > 0)
-						{
-						check1value += saliencyMap.get(i,j)[0];
-						}
-			}
-		}
-//        Getting the average value of the image
-		check1value = check1value/check1count;
+		double check1value = Core.sumElems(check1).val[0];
+		double check2value = Core.sumElems(check2).val[0];
+		double check3value = Core.sumElems(check3).val[0];
 		
-		double check2value = 0;
-		for (int i = 0;i<oHeight;i++)
-		{
-			for (int j = 0;j<oWidth;j++)
-			{
-				if (check2.get(i,j)[0] > 0)
-						{
-						check2value += saliencyMap.get(i,j)[0];
-						}
-			}
-		}
-//        Getting the average value of the image
-		check2value = check2value/check2count;
-		
-		double check3value = 0;
-		for (int i = 0;i<oHeight;i++)
-		{
-			for (int j = 0;j<oWidth;j++)
-			{
-				if (check3.get(i,j)[0] > 0)
-						{
-						check3value += saliencyMap.get(i,j)[0];
-						}
-			}
-		}
-//        Getting the average value of the image
-		check3value = check3value/check3count;
+        System.out.println("Lable 2.0 has total "+check1value + " " + check1count);
+        System.out.println("Lable 1.0 has total "+check2value + " " + check2count);
+        System.out.println("Lable 0.0 has total "+check3value + " " + check3count);
+        
+		check1value = check1value/(double)check1count;
+		check2value = check2value/(double)check2count;
+		check3value = check3value/(double)check3count;
+
+//		double check1value = 0;
+//		for (int i = 0;i<oHeight;i++)
+//		{
+//			for (int j = 0;j<oWidth;j++)
+//			{
+//				if (check1.get(i,j)[0] > 0)
+//						{
+//						check1value += saliencyMap.get(i,j)[0];
+//						}
+//			}
+//		}
+////        Getting the average value of the image
+//		check1value = check1value/check1count;
+//		
+//		double check2value = 0;
+//		for (int i = 0;i<oHeight;i++)
+//		{
+//			for (int j = 0;j<oWidth;j++)
+//			{
+//				if (check2.get(i,j)[0] > 0)
+//						{
+//						check2value += saliencyMap.get(i,j)[0];
+//						}
+//			}
+//		}
+////        Getting the average value of the image
+//		check2value = check2value/check2count;
+//		
+//		double check3value = 0;
+//		for (int i = 0;i<oHeight;i++)
+//		{
+//			for (int j = 0;j<oWidth;j++)
+//			{
+//				if (check3.get(i,j)[0] > 0)
+//						{
+//						check3value += saliencyMap.get(i,j)[0];
+//						}
+//			}
+//		}
+////        Getting the average value of the image
+//		check3value = check3value/check3count;
 //        Rearrange the Map ensure the the MostSalient Map has the highest average score and lowest for LeastSalient
 		Mat tmp = new Mat();
 		if (Math.max(check1value, Math.max(check2value,check3value)) == check1value)
@@ -567,10 +670,10 @@ public class Evaluate {
 		if (check2value < check3value)
 		{
 			//label 2.0 for most, 1.0 for least, 0 for medium
-			Imgproc.threshold(ab, MediumSalient, 0, 1.0, Imgproc.THRESH_BINARY_INV);
 			Imgproc.threshold(ab, LeastSalient, 0, 1.0, Imgproc.THRESH_BINARY);
-			Core.subtract(LeastSalient, MostSalient, MediumSalient);
-			
+			Core.subtract(LeastSalient, MostSalient, LeastSalient);
+			Imgproc.threshold(ab, MediumSalient, 0, 1.0, Imgproc.THRESH_BINARY_INV);
+
 		}
 		}else
 		{
@@ -580,21 +683,21 @@ public class Evaluate {
 					// label 2.0 for medium, 1.0 for most and 0 for least
 				Imgproc.threshold(ab, MediumSalient, 1.0, 1.0, Imgproc.THRESH_BINARY_INV);
 				Imgproc.threshold(ab, MostSalient, 0, 1.0, Imgproc.THRESH_BINARY);
-				Core.subtract(MostSalient, MediumSalient, MediumSalient);
+				Core.subtract(MostSalient, MediumSalient, MostSalient);
 				Imgproc.threshold(ab, LeastSalient, 0, 1.0, Imgproc.THRESH_BINARY_INV);		
 				}else{
 					//label 2.0 for least, 1.0 for most, 0 for medium
 					Imgproc.threshold(ab, LeastSalient, 1.0, 1.0, Imgproc.THRESH_BINARY_INV);
 					Imgproc.threshold(ab, MostSalient, 0, 1.0, Imgproc.THRESH_BINARY);
-					Core.subtract(MostSalient, LeastSalient, MediumSalient);
+					Core.subtract(MostSalient, LeastSalient, MostSalient);
 					Imgproc.threshold(ab, MediumSalient, 0, 1.0, Imgproc.THRESH_BINARY_INV);		
 			}
 			}else{
-				if (check1value > check3value){
+				if (check1value > check2value){
 					// label 2.0 for medium, 1.0 for least and 0 for most
 				Imgproc.threshold(ab, MediumSalient, 1.0, 1.0, Imgproc.THRESH_BINARY_INV);
 				Imgproc.threshold(ab, LeastSalient, 0, 1.0, Imgproc.THRESH_BINARY);
-				Core.subtract(LeastSalient, MediumSalient, MediumSalient);
+				Core.subtract(LeastSalient, MediumSalient, LeastSalient);
 				Imgproc.threshold(ab, MostSalient, 0, 1.0, Imgproc.THRESH_BINARY_INV);		
 				}else{
 					//label 2.0 for least, 1.0 for medium, 0 for most
@@ -606,7 +709,10 @@ public class Evaluate {
 			}
 				
 		}
-         
+        System.out.println("Lable 2.0 has average "+check1value);
+        System.out.println("Lable 1.0 has average "+check2value);
+        System.out.println("Lable 0.0 has average "+check3value);
+
         System.out.println("MyKmeans Finished");
 
 	}
@@ -937,12 +1043,12 @@ public class Evaluate {
 	
 //	Fill the holes inside a binary image
 	public static void imfill(Mat I){
-//		Mat fill = I.clone();
-//		Mat contour = I.clone();
-        Mat fill = new Mat();
-        Mat contour = new Mat();
-        I.copyTo(fill);
-        I.copyTo(contour);
+		Mat fill = I.clone();
+		Mat contour = I.clone();
+//        Mat fill = new Mat();
+//        Mat contour = new Mat();
+//        I.copyTo(fill);
+//        I.copyTo(contour);
         
 		Point seed = new Point(1,1);
 //		System.out.println(seed.x+ " y axis is "+seed.y);
@@ -959,15 +1065,16 @@ public class Evaluate {
 //    Get the convex hull from an image
 	public static void Convex(Mat copy,Mat boundary)
 	{
-//		Mat I = copy.clone();
-        Mat I = new Mat();
-        copy.copyTo(I);
+		Mat I = copy.clone();
+//        Mat I = new Mat();
+//        copy.copyTo(I);
         
 		int w = copy.cols();
 		int h = copy.rows();
 		I.convertTo(I, CvType.CV_8UC1);
+//		Mat hierarchy = new Mat(I.rows(),I.cols(),CvType.CV_8UC1,new Scalar(0));
 		Mat hierarchy = new Mat(I.rows(),I.cols(),CvType.CV_8UC1,new Scalar(0));
-		
+
 	    List<MatOfPoint> contours =new ArrayList<MatOfPoint>();
 	    List<MatOfInt> hull = new ArrayList<MatOfInt>(contours.size());
 
