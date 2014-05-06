@@ -60,25 +60,30 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         {
             //parameters.setPreviewSize(height, width);                           
             mCamera.setDisplayOrientation(90);
+            mCamera.setParameters(parameters);
+
         }
 
         if(display.getRotation() == Surface.ROTATION_90)
         {
-            parameters.setPreviewSize(width, height);                           
+            //parameters.setPreviewSize(width, height); 
+            //mCamera.setDisplayOrientation(90);
+            //mCamera.setParameters(parameters);
         }
 
         if(display.getRotation() == Surface.ROTATION_180)
         {
             mCamera.setDisplayOrientation(270);
+            mCamera.setParameters(parameters);
         }
 
         if(display.getRotation() == Surface.ROTATION_270)
         {
             //parameters.setPreviewSize(width, height);
             mCamera.setDisplayOrientation(180);
+            mCamera.setParameters(parameters);
         }
 
-        mCamera.setParameters(parameters);
         
         if (mHolder.getSurface() == null){
           // preview surface does not exist

@@ -184,8 +184,8 @@ public class MainActivity extends Activity {
 		//Try Super pixel
 		
 		
-		 SLICSuperpixel slic = new SLICSuperpixel( rgbMatOri, 400 );
-		    slic.generateSuperPixels();
+		 //SLICSuperpixel slic = new SLICSuperpixel( rgbMatOri, 400 );
+		    //slic.generateSuperPixels();
 //			    imshow( "CIELab space", slic.getImage() );
 		   
 		    // Recolor based on the average cluster color 
