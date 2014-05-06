@@ -24,6 +24,7 @@ import android.content.DialogInterface.OnDismissListener;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,8 +42,6 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
-import edu.rochester.blindphoto.SLICSuperpixel;
-
 public class MainActivity extends Activity {
 	private static final String TAG = "ImageProcess::Activity";
 	
@@ -56,6 +55,8 @@ public class MainActivity extends Activity {
 	private Mat grayMatOri = null;
 	private Mat originalgrayMatOri = null;
 	private String passedImgPathString = null;
+	
+	private int needRotate = 0;
 	
 
 	
@@ -97,6 +98,8 @@ public class MainActivity extends Activity {
 		originalImageView = (ImageView)findViewById(R.id.original_picture);
 		processedImageView = (ImageView)findViewById(R.id.processed_picture);
 		passedImgPathString = getIntent().getStringExtra("pic");
+		needRotate = getIntent().getIntExtra("rotate", 0);
+		
 		/*
 		//setup button listener
 		chooseButton = (Button)findViewById(R.id.choose_button);
@@ -144,7 +147,12 @@ public class MainActivity extends Activity {
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);  
     }
 	
-
+	public static Bitmap RotateBitmap(Bitmap source, float angle)
+	{
+	      Matrix matrix = new Matrix();
+	      matrix.postRotate(angle);
+	      return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+	}
 	
 	
 	private void processImage() throws FileNotFoundException{
@@ -168,11 +176,14 @@ public class MainActivity extends Activity {
 		BitmapFactory.Options options = new BitmapFactory.Options();
 		options.inPreferredConfig = Bitmap.Config.ARGB_8888;
 		bitmap = BitmapFactory.decodeFile(passedImgPathString, options);
+		//if (Camera)
 		if (bitmap == null) {
 			options.inPreferredConfig = Bitmap.Config.RGB_565;
 			bitmap = BitmapFactory.decodeFile(passedImgPathString, options);
 
 		}
+		
+		bitmap = RotateBitmap(bitmap, needRotate);
 		//bitmap = BitmapFactory.decodeStream(cr.openInputStream(uri));
 		
 		// process Image
@@ -180,28 +191,6 @@ public class MainActivity extends Activity {
 		originalgrayMatOri = new Mat();
 		grayMatOri = new Mat();
 		Utils.bitmapToMat(bitmap, rgbMatOri);
-		
-		//Try Super pixel
-		
-		
-		 //SLICSuperpixel slic = new SLICSuperpixel( rgbMatOri, 400 );
-		    //slic.generateSuperPixels();
-//			    imshow( "CIELab space", slic.getImage() );
-		   
-		    // Recolor based on the average cluster color 
-		    /*Mat Aresult = slic.recolor();
-		    Imgproc.cvtColor( Aresult, Aresult, Imgproc.COLOR_Lab2RGB );
-//			    imshow( "Clustered color", result );
-		   
-		    // Draw the contours bordering the clusters 
-		    ArrayList<Point> contours = slic.getContours();
-		    Mat superpixel = new Mat();
-		    superpixel = rgbMatOri.clone();
-		    for( Point contour: contours ){
-		    double[] colorvalue = {255.0,0.0,255.0};
-		    superpixel.put((int)contour.y, (int)contour.x, colorvalue);
-//			        image.at<Vec3b>( contour.y, contour.x ) = Vec3b(255, 0, 255);
-		    }*/
 		    
 		
 //Convert the Original Color Image into Gray Image
@@ -254,12 +243,18 @@ public class MainActivity extends Activity {
 			Feature feature = Evaluate.doEvaluate(rgbMatOri);
 //Display the result of saliency detected object
 			System.out.println("Saliency Detect Map display");
-		    Bitmap result = Bitmap.createBitmap(feature.result.width(), feature.result.height(), Config.RGB_565);    
+			
+//		    Bitmap result = Bitmap.createBitmap(feature.superpixel.width(), feature.superpixel.height(), Config.RGB_565);    
+//			feature.superpixel.convertTo(feature.superpixel, CvType.CV_8UC3);
+//			Utils.matToBitmap(feature.superpixel, result);
+
+			Bitmap result = Bitmap.createBitmap(feature.result.width(), feature.result.height(), Config.RGB_565);    
 			feature.result.convertTo(feature.result, CvType.CV_8UC1);
 		    Utils.matToBitmap(feature.result, result);
-			//Bitmap result = Bitmap.createBitmap(feature.SaliencyMap.width(), feature.SaliencyMap.height(), Config.RGB_565);    
-			//feature.SaliencyMap.convertTo(feature.SaliencyMap, CvType.CV_8UC1);
-			//Utils.matToBitmap(feature.SaliencyMap, result);
+		    
+//			Bitmap result = Bitmap.createBitmap(feature.SaliencyMap.width(), feature.SaliencyMap.height(), Config.RGB_565);    
+//			feature.SaliencyMap.convertTo(feature.SaliencyMap, CvType.CV_8UC1);
+//			Utils.matToBitmap(feature.SaliencyMap, result);
 			
 			//Feedback for illumination
 			tv = (TextView) findViewById(R.id.Feedback);
@@ -320,7 +315,8 @@ public class MainActivity extends Activity {
 		}
 		catch(Exception e)
 		{
-		  Log.e(e.toString(), null);
+//		  Log.e(e.toString(), null);
+			System.out.println("Exception caught");
 		}
 		
 		

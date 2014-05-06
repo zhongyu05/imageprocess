@@ -104,6 +104,7 @@ public class CameraActivity extends Activity{
         Intent audioIntent = new Intent(CameraActivity.this, MainActivity.class);
         audioIntent.setAction("com.example.imageprocess.MAIN");
         audioIntent.putExtra("pic", imageFilePath);
+        audioIntent.putExtra("rotate", mPreview.needRotate);
         this.startActivity(audioIntent);
 	}
 
@@ -292,6 +293,7 @@ public class CameraActivity extends Activity{
 	            fos.write(data);
 	            fos.close();
 	            startMainActivity(pictureFile.getAbsolutePath());
+	            //if (mCamera.getParameters().)
 	            
 	        } catch (FileNotFoundException e) {
 	            Log.d(TAG, "File not found: " + e.getMessage());
