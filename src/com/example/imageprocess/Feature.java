@@ -20,7 +20,8 @@ public class Feature{
 		Mat LeastSalient ;
 		Mat Salient ;
 		Mat I_whole ;
-
+		
+		Mat superpixel;
 		/* whatever features you want to add*/
 		
 		public Feature()
