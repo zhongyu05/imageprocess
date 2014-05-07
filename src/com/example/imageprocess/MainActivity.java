@@ -259,23 +259,23 @@ public class MainActivity extends Activity {
 			tv = (TextView) findViewById(R.id.Feedback);
 			String feedback = "This photo is";
 			if (feature.illu[0]){
-				feedback = feedback + "too dark,";
+				feedback = feedback + " too dark,";
 			}else if(feature.illu[1]){
-				feedback = feedback + "too bright";
+				feedback = feedback + " too bright";
 			}else{
 				//feedback = feedback + "Good Illu";
 			}
 				
 			//Feedback for blur
 			if (feature.blur || feature.blurextent >= 0.85){
-				feedback = feedback + ", blurry. ";
+				feedback = feedback + " blurry. ";
 			}
 			
 			//Feedback for blurextent
 			else if (feature.blurextent > 0.7 && !feature.blur){
-				feedback = feedback + ", possibly blurry. ";
+				feedback = feedback + " possibly blurry. ";
 			} else {
-				feedback = feedback + ", very likely not blurry. ";
+				feedback = feedback + " very likely not blurry. ";
 			}
 			
 			//Feedback for close detection
@@ -304,7 +304,7 @@ public class MainActivity extends Activity {
 			}
 			
 			feedback = feedback + closefeedback;
-			feedback = feedback + "Please double tap back button and take another one.";
+			feedback = feedback + " Please double tap back button and take another one.";
 			//Feedback for multiple object
 			//if (feature.multiple){
 				//feedback = feedback + "Multiple Objects existing, please remove irrelevant objects";
