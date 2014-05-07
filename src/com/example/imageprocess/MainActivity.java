@@ -304,7 +304,7 @@ public class MainActivity extends Activity {
 			}
 			
 			feedback = feedback + closefeedback;
-			feedback = feedback + 'Please double tap back button and take another one.';
+			feedback = feedback + "Please double tap back button and take another one.";
 			//Feedback for multiple object
 			//if (feature.multiple){
 				//feedback = feedback + "Multiple Objects existing, please remove irrelevant objects";
