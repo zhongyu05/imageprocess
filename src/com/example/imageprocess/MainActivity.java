@@ -176,7 +176,6 @@ public class MainActivity extends Activity {
 		BitmapFactory.Options options = new BitmapFactory.Options();
 		options.inPreferredConfig = Bitmap.Config.ARGB_8888;
 		bitmap = BitmapFactory.decodeFile(passedImgPathString, options);
-		//if (Camera)
 		if (bitmap == null) {
 			options.inPreferredConfig = Bitmap.Config.RGB_565;
 			bitmap = BitmapFactory.decodeFile(passedImgPathString, options);
@@ -258,56 +257,62 @@ public class MainActivity extends Activity {
 			
 			//Feedback for illumination
 			tv = (TextView) findViewById(R.id.Feedback);
-			String feedback = "";
+			String feedback = "This photo is";
 			if (feature.illu[0]){
-				feedback = feedback + "Too Low Illuminated";
+				feedback = feedback + "too dark,";
 			}else if(feature.illu[1]){
-				feedback = feedback + "Too High Illuminated";
+				feedback = feedback + "too bright";
 			}else{
-				feedback = feedback + "Good Illu";
+				//feedback = feedback + "Good Illu";
 			}
 				
 			//Feedback for blur
 			if (feature.blur || feature.blurextent >= 0.85){
-				feedback = feedback + " and blurry";
+				feedback = feedback + ", blurry. ";
 			}
 			
 			//Feedback for blurextent
-			if (feature.blurextent > 0.5 || !feature.blur){
-				feedback = feedback + " and probably blurry.\n";
+			else if (feature.blurextent > 0.7 && !feature.blur){
+				feedback = feedback + ", possibly blurry. ";
+			} else {
+				feedback = feedback + ", very likely not blurry. ";
 			}
 			
 			//Feedback for close detection
 			int c = 0;
-			String closefeedback = "";
+			String closefeedback = "Objects are cut off on the";
 			if (feature.closeflag[0]){
-				closefeedback = closefeedback + "Objects too close to top; ";
+				closefeedback = closefeedback + " top; ";
 				c++;
 			}
 			if (feature.closeflag[1]){
-				closefeedback = closefeedback + "Objects too close to bottom; ";
+				closefeedback = closefeedback + " bottom; ";
 				c++;
 			}
 			if (feature.closeflag[2]){
-				closefeedback = closefeedback + "Objects too close to left; ";
+				closefeedback = closefeedback + " left; ";
 				c++;
 			}
 			if (feature.closeflag[3]){
-				closefeedback = closefeedback + "Objects too close to right; ";
+				closefeedback = closefeedback + " right; ";
 				c++;
 			}
 			if (c>=3){
-				closefeedback = "Too Close to Object";
+				closefeedback = "Objects are too close to the camera.";
+			} else if ( c== 0) {
+				closefeedback = "";
 			}
 			
 			feedback = feedback + closefeedback;
-			feedback = feedback + '\n';
+			feedback = feedback + 'Please double tap back button and take another one.';
 			//Feedback for multiple object
-			if (feature.multiple){
-				feedback = feedback + "Multiple Objects existing, please remove irrelevant objects";
-			}
+			//if (feature.multiple){
+				//feedback = feedback + "Multiple Objects existing, please remove irrelevant objects";
+			//}
 			
 			tv.setText(feedback);
+			
+			Toast.makeText(this, feedback, Toast.LENGTH_LONG).show();
 			
 
 			

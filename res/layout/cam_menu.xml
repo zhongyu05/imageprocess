@@ -6,10 +6,12 @@
         android:showAsAction="ifRoom"
         android:title="@string/camera"/>
     
+    <!--
     <item android:id="@+id/action_search"
           android:icon="@android:drawable/ic_menu_search"
           android:showAsAction="ifRoom"
           android:title="@string/choose"/>
+          -->
     
         <item android:id="@+id/action_upload"
           android:icon="@android:drawable/ic_menu_upload"

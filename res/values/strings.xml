@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">ImageProcess</string>
+    <string name="app_name">EasyCam</string>
 
-    <string name="camera">Camera</string>
+    <string name="camera">Camera, Double tap to take a photo and wait for feedback.</string>
 
     <string name="choose">Albumn</string>
 

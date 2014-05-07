@@ -187,19 +187,27 @@ public class CameraActivity extends Activity{
 	    File[] files = mediaStorageDir.listFiles();
 	    for (int i = 0; i < files.length; i++) {
 	    	File file = files[i];
+
+	    	if (file.isDirectory()) {
+				continue;
+			}
 			try {
-				params.put("pictures["+i+"]", file);
+				params.put("pictures["+(i+1)+"]", file);
+		        Log.d("ImageProcessStatus", "file:"+file.getName());
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-		//File imgFile = new File(passedImgPathString);
 
+		//File imgFile = new File(passedImgPathString);
+	    mHttpclient.setTimeout(8000);
 		mHttpclient.post(this, "http://cs.rochester.edu/u/zyu/blind/upload.php", params, new AsyncHttpResponseHandler() {
 		    @Override
 		    public void onSuccess(String response) {
 			    sendingDialog.dismiss();
+		        Log.d("ImageProcessStatus", "res::"+response);
+
 			    Toast.makeText(getApplicationContext(), "Uploading complete, you can quit the app now.", Toast.LENGTH_SHORT).show();
 		    }
 		    @Override
@@ -215,9 +223,9 @@ public class CameraActivity extends Activity{
 	public boolean onOptionsItemSelected(MenuItem item) {
 	    // Handle item selection
 	    switch (item.getItemId()) {
-	    case R.id.action_search:
+	    /*case R.id.action_search:
 	        newImagePicker();
-	        return true;
+	        return true;*/
 	    case R.id.camera:
 	    	mCamera.takePicture(null, null, mPicture);
 	    	final MenuItem disableItem = item;
